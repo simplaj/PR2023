@@ -48,5 +48,5 @@ class StockDataset(Dataset):
 if  __name__ == '__main__':
     stocks_dataset = StockDataset()
     stocks_loader = DataLoader(stocks_dataset, batch_size=32, shuffle=True)
-    for x in stocks_loader:
-        print(x)
+    # for x in stocks_loader:
+    #     print(x)
