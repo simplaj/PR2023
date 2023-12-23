@@ -1,9 +1,30 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
+from tqdm import tqdm
 
 class StockDataset(Dataset):
-    def __init__(self, data, stocks, features, target, history_days, pre_days):
+    def __init__(self):
+        data = pd.read_csv('/root/autodl-tmp/2020A.csv')
+
+        data = data[data['停牌'] == 0]
+        # Convert the date column to datetime
+        data['交易日期'] = pd.to_datetime(data['交易日期'].astype(str), format='%Y%m%d')
+        data.set_index('交易日期', inplace=True)
+
+        # Select features and target
+        features = ['开盘价', '最低价', '最高价', '成交量']
+        target = '收盘价'
+
+        # Set length of history and forecast
+        history_days = 90  # Use last 60 days to predict
+        pre_days = 20  # Predict the next ten days
+
+        stocks = data['WIND代码'].unique()
+        
+        stock_counts = data['WIND代码'].value_counts()
+
+        stocks = stock_counts[stock_counts >= (history_days + pre_days)].index
         self.data = data
         self.stocks = stocks
         self.features = features
@@ -28,25 +49,7 @@ class StockDataset(Dataset):
 
 
 if  __name__ == '__main__':
-    # Load data
-    data = pd.read_csv('2020A.csv')
-
-    # Convert the date column to datetime
-    data['交易日期'] = pd.to_datetime(data['交易日期'].astype(str), format='%Y%m%d')
-    data.set_index('交易日期', inplace=True)
-
-    # Select features and target
-    features = ['开盘价', '最低价', '最高价', '成交量']
-    target = '收盘价'
-
-    # Set length of history and forecast
-    history_days = 60  # Use last 60 days to predict
-    pre_days = 10  # Predict the next ten days
-
-    stocks = data['WIND代码'].unique()
-
-    # Create dataset and dataloader
-    stocks_dataset = StockDataset(data, stocks, features, target, history_days, pre_days)
+    stocks_dataset = StockDataset()
     stocks_loader = DataLoader(stocks_dataset, batch_size=32, shuffle=True)
     for x in stocks_loader:
         print(x)
