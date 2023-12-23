@@ -24,9 +24,21 @@ class StockDataset(Dataset):
         
         stock_counts = data['WIND代码'].value_counts()
 
-        stocks = stock_counts[stock_counts >= (history_days + pre_days)].index
+        stocks = list(stock_counts[stock_counts >= (history_days + pre_days)].index)
         self.data = data
-        self.stocks = stocks
+        import random
+
+        # Randomly shuffle the data
+        random.seed(42)
+        random.shuffle(stocks)
+
+        # Calculate the index marking 80% of the data
+        split_idx = int(0.8 * len(stocks))
+
+        # Split the data into training and validation sets
+        train_stocks = stocks[:split_idx]
+        valid_stocks = stocks[split_idx:]
+        self.stocks = train_stocks
         self.features = features
         self.target = target
         self.history_days = history_days

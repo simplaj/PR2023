@@ -40,6 +40,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward(retain_graph=True)
         optimizer.step()
+    torch.save(model, f'model_{epoch}_{loss.item()}.pth')
 
     if (epoch+1) % 1 == 0:
         print('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
