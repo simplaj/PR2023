@@ -6,6 +6,8 @@ import torch
 from loss import custom_loss      # 导入自定义的损失函数
 from tqdm import tqdm
 
+from utils import save_and_plot_predictions
+
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # Hyperparameters
 input_dim = 5    # number of features
@@ -27,7 +29,10 @@ stocks_loader = DataLoader(stocks_dataset, batch_size=32, shuffle=True)
 
 # Train model
 num_epochs = 100
+
 for epoch in range(num_epochs):
+    all_predictions = []
+    all_labels = []
     for i, (x, y) in tqdm(enumerate(stocks_loader)):
         inputs = x.to(device).float()
         labels = y.to(device).float()
@@ -36,10 +41,18 @@ for epoch in range(num_epochs):
         outputs = model(inputs)
         loss = criterion(outputs, labels)
 
+        # Save predictions and labels for each batch
+        all_predictions.extend(outputs.detach().cpu().numpy())
+        all_labels.extend(labels.detach().cpu().numpy())
+
         # Backward and optimize
         optimizer.zero_grad()
         loss.backward(retain_graph=True)
         optimizer.step()
+
+    # Save and plot the predictions after each epoch
+    save_and_plot_predictions(all_predictions, all_labels)
+    
     torch.save(model, f'model_{epoch}_{loss.item()}.pth')
 
     if (epoch+1) % 1 == 0:
