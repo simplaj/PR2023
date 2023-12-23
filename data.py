@@ -13,7 +13,7 @@ class StockDataset(Dataset):
         data.set_index('交易日期', inplace=True)
 
         # Select features and target
-        features = ['开盘价', '最低价', '最高价', '成交量']
+        features = ['开盘价', '最低价', '最高价', '成交量', '收盘价']
         target = '收盘价'
 
         # Set length of history and forecast
@@ -38,9 +38,6 @@ class StockDataset(Dataset):
     def __getitem__(self, idx):
         stock = self.stocks[idx]
         stock_data = self.data[self.data['WIND代码'] == stock]
-        
-        if len(stock_data) < self.history_days + self.pre_days:
-            raise ValueError(f'Not enough data for stock {stock}')
         
         x = stock_data[self.features].values[-(self.history_days+self.pre_days):-self.pre_days]
         y = stock_data[self.target].values[-self.pre_days:]
