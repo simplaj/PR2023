@@ -16,7 +16,6 @@ def custom_loss(y_true, y_pred):
     # 其他 => 0 (不交易)
     trade_decision_predicted = torch.where(price_change_percentage_predicted > 0.001, 1,
                                            torch.where(price_change_percentage_predicted < -0.001, -1, 0))
-    print(trade_decision_predicted)
     # 初始化股份：0-空仓，1-持有股票
     shares = torch.zeros(price_change_percentage_predicted.size(0), dtype=torch.float32).to(y_true.device)  # Make sure to use the same device as your tensors
                                                                                                             
