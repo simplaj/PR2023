@@ -82,6 +82,7 @@ class StockAttention(nn.Module):
         )
         self.pooling = nn.AdaptiveAvgPool1d(1)
         self.head = nn.Linear(max_len, out_dim)
+        self.act = nn.ReLU()
 
     def forward(self, x):
         x = self.stock_emb(x)
@@ -90,7 +91,7 @@ class StockAttention(nn.Module):
             x = layer(x)
         x = self.pooling(x)
         x = torch.flatten(x, 1)
-        x = self.head(x)
+        x = self.act(self.head(x))
 
         return x
 
