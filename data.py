@@ -2,6 +2,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from tqdm import tqdm
+import random
+
 
 class StockDataset(Dataset):
     def __init__(self):
@@ -26,7 +28,6 @@ class StockDataset(Dataset):
 
         stocks = list(stock_counts[stock_counts >= (history_days + pre_days)].index)
         self.data = data
-        import random
 
         # Randomly shuffle the data
         random.seed(42)
@@ -50,9 +51,12 @@ class StockDataset(Dataset):
     def __getitem__(self, idx):
         stock = self.stocks[idx]
         stock_data = self.data[self.data['WIND代码'] == stock]
+        len_day = stock_data.values.shape[0]
+        start = random.randint(0, len_day - self.history_days - self.pre_days)
         
-        x = stock_data[self.features].values[-(self.history_days+self.pre_days):-self.pre_days]
-        y = stock_data[self.target].values[-self.pre_days:]
+        x = stock_data[self.features].values[start: start + self.history_days]
+        y = stock_data[self.target].\
+            values[start + self.history_days: start + self.history_days + self.pre_days:]
         
         return x, y
 
@@ -60,5 +64,5 @@ class StockDataset(Dataset):
 if  __name__ == '__main__':
     stocks_dataset = StockDataset()
     stocks_loader = DataLoader(stocks_dataset, batch_size=32, shuffle=True)
-    # for x in stocks_loader:
-    #     print(x)
+    for x in stocks_loader:
+        print(x)
