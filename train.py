@@ -17,7 +17,8 @@ max_len = 90
 head = 9
 out_dim = 20   # output dimension
 num_layers = 6   # number of hidden layers
-num_epochs = 100
+num_epochs = 2000
+learnning_rate = 1e-3
 wandb.init(
     # set the wandb project where this run will be logged
     project="stock",
@@ -40,7 +41,7 @@ model.to(device)
 # Loss and optimizer
 # criterion = custom_loss  # 用于回归的你定义的损失函数
 criterion = torch.nn.MSELoss()  # 用于回归的你定义的损失函数
-optimizer = torch.optim.Adam(model.parameters())  # Adam 优化器
+optimizer = torch.optim.Adam(model.parameters(), lr=learnning_rate)  # Adam 优化器
 
 # Load data
 stocks_dataset = StockDataset()
@@ -48,6 +49,12 @@ stocks_loader = DataLoader(stocks_dataset, batch_size=32, shuffle=True)
 
 # Train model
 
+scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                optimizer,
+                learnning_rate,
+                num_epochs,
+                steps_per_epoch=len(stocks_loader)
+            )
 for epoch in range(num_epochs):
     all_predictions = []
     all_labels = []
@@ -75,6 +82,11 @@ for epoch in range(num_epochs):
                 'train loss':all_loss / (i + 1),
             })
 
+    scheduler.step()
+    lr = optimizer.param_groups[0]['lr']
+    wandb.log({
+        'lr':lr,
+    })
     # Save and plot the predictions after each epoch
     save_and_plot_predictions(all_predictions, all_labels, epoch)
     
