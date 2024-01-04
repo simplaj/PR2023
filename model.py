@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 
@@ -149,7 +150,7 @@ class TransformerModel(nn.Module):
             dim_feedforward=4 * args.d_model,
             batch_first=True,
             dropout=0.2,
-            device=device
+            device=args.device
         )
         decoder_layer = nn.TransformerDecoderLayer(
             d_model=args.d_model,
@@ -157,7 +158,7 @@ class TransformerModel(nn.Module):
             dropout=0.2,
             dim_feedforward=4 * args.d_model,
             batch_first=True,
-            device=device
+            device=args.device
         )
         self.encoder = torch.nn.TransformerEncoder(encoder_layer, num_layers=args.num_layers)
         self.decoder = torch.nn.TransformerDecoder(decoder_layer, num_layers=args.num_layers)

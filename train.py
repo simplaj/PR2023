@@ -5,6 +5,7 @@ import torch
 import wandb
 from loss import custom_loss      # 导入自定义的损失函数
 from tqdm import tqdm
+import argparse
 
 from utils import save_and_plot_predictions
 
@@ -19,9 +20,9 @@ parser.add_argument('--seq_len', type=int, default=90)
 parser.add_argument('--bs', type=int, default=32)
 
 args = parser.parse_args()
-
-
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+args.device = device
+
 wandb.init(
     project="stock",
     config=args
@@ -47,7 +48,7 @@ for epoch in tqdm(range(args.epochs)):
     all_predictions = []
     all_labels = []
     for batch_idx, (src, tgt) in enumerate(stocks_loader, 0):
-        src, tgt = src.to(device), tgt.to(device)
+        src, tgt = src.to(device).float(), tgt.to(device).float()
         tgt = torch.cat([src[:, -1:, :], tgt], dim=1)
         tgt_mask = torch.tril(torch.ones(tgt.size(1), tgt.size(1)), diagonal=0) == 0
         #
