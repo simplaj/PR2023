@@ -71,14 +71,13 @@ class AttnLayer(nn.Module):
 
 class StockAttention(nn.Module):
     """Some Information about StockAttention"""
-    def __init__(self, in_dim, hid_dim, max_len, head, out_dim):
+    def __init__(self, in_dim, hid_dim, max_len, head, out_dim, layers):
         super(StockAttention, self).__init__()
         self.stock_emb = nn.Linear(in_dim, hid_dim)
         self.tem_emb = nn.Parameter(torch.zeros(1, max_len, hid_dim))
         self.blocks = nn.ModuleList(
             [
-                # AttnLayer(head, hid_dim),
-                AttnLayer(head, hid_dim),
+                AttnLayer(head, hid_dim) for _ in range(layers)
             ]
         )
         self.pooling = nn.AdaptiveAvgPool1d(1)

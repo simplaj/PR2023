@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 class StockDataset(Dataset):
     def __init__(self):
-        data = pd.read_csv('/root/autodl-tmp/2020A.csv')
+        data = pd.read_csv('./2020A.csv')
 
         data = data[data['停牌'] == 0]
         # Convert the date column to datetime

@@ -10,7 +10,7 @@ def save_and_plot_predictions(predictions, labels, epoch):
 
     # Save to CSV
     df = pd.DataFrame(data={"Predictions": predictions_np, "Ground Truth": labels_np})
-    df.to_csv(f"predictions_{epoch}.csv", index=False)
+    df.to_csv(f"./train_results/predictions_{epoch}.csv", index=False)
     
     # Plot results
     plt.figure(figsize=(12, 6))
@@ -20,4 +20,4 @@ def save_and_plot_predictions(predictions, labels, epoch):
     plt.xlabel('Time')
     plt.ylabel('Values')
     plt.legend()
-    plt.savefig(f'pre_{epoch}.png')
+    plt.savefig(f'./train_results/pre_{epoch}.png')
