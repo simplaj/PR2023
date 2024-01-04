@@ -81,20 +81,20 @@ class StockAttention(nn.Module):
             ]
         )
         self.pooling = nn.AdaptiveAvgPool1d(1)
-        self.pooling2 = nn.AdaptiveMaxPool2d(1)
+        # self.pooling2 = nn.AdaptiveMaxPool2d(1)
         self.head = nn.Linear(max_len, out_dim)
-        self.act = nn.Sigmoid()
+        # self.act = nn.Sigmoid()
 
     def forward(self, x):
         x = self.stock_emb(x)
         x = x + self.tem_emb
         for layer in self.blocks:
             x = layer(x)
-        max_x = self.pooling2(x)
-        max_x = torch.flatten(max_x, 1)
+        # max_x = self.pooling2(x)
+        # max_x = torch.flatten(max_x, 1)
         x = self.pooling(x)
         x = torch.flatten(x, 1)
-        x = self.act(self.head(x)) * max_x
+        x = self.head(x)
 
         return x
 
