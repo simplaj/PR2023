@@ -118,6 +118,60 @@ class StockPredictor(nn.Module):
         return out
     
 
+class TransformerModel(nn.Module):
+    def __init__(self, args):
+        super(TransformerModel, self).__init__()
+        self.args = args
+        self.trans = nn.Linear(args.input_size, args.d_model)
+        self.pos_emb = PositionalEncoding(args.d_model)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=args.d_model,
+            nhead=args.nhead,
+            dim_feedforward=4 * args.d_model,
+            batch_first=True,
+            dropout=0.2,
+            device=device
+        )
+        decoder_layer = nn.TransformerDecoderLayer(
+            d_model=args.d_model,
+            nhead=args.nhead,
+            dropout=0.2,
+            dim_feedforward=4 * args.d_model,
+            batch_first=True,
+            device=device
+        )
+        self.encoder = torch.nn.TransformerEncoder(encoder_layer, num_layers=args.num_layers)
+        self.decoder = torch.nn.TransformerDecoder(decoder_layer, num_layers=args.num_layers)
+
+        self.output_fc = nn.Sequential(
+            nn.Linear(args.d_model, 64),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(64, args.input_size)
+        )
+
+    def encode(self, src):
+        src = self.trans(src)
+        src = self.pos_emb(src)
+        memory = self.encoder(src)
+
+        return memory
+
+    def decode(self, tgt, memory, tgt_mask):
+        tgt = self.trans(tgt)
+        tgt = self.pos_emb(tgt)
+        out = self.decoder(tgt=tgt, memory=memory, tgt_mask=tgt_mask)
+        out = self.output_fc(out)
+
+        return out
+
+    def forward(self, src, tgt, tgt_mask):
+        memory = self.encode(src)
+        out = self.decode(tgt, memory, tgt_mask)
+
+        return out
+
+
 if __name__ == '__main__':
     # model = StockPredictor(input_dim=5, hidden_dim=64, num_layers=2, output_dim=20)
     model = StockAttention(5, 32, 90, 9, 20, 1)

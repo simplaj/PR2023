@@ -1,6 +1,5 @@
-# train.py
 from torch.utils.data import DataLoader
-from model import StockPredictor, StockAttention
+from model import TransformerModel
 from data import StockDataset
 import torch
 import wandb
@@ -9,83 +8,66 @@ from tqdm import tqdm
 
 from utils import save_and_plot_predictions
 
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--input_size', type=int, default=5)
+parser.add_argument('--d_model', type=int, default=256)
+parser.add_argument('--nhead', type=int, default=8)
+parser.add_argument('--num_layers', type=int, default=6)
+parser.add_argument('--epochs', type=int, default=2000)
+parser.add_argument('--lr', type=int, default=1e-3)
+parser.add_argument('--seq_len', type=int, default=90)
+parser.add_argument('--bs', type=int, default=32)
+
+args = parser.parse_args()
+
+
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-# Hyperparameters
-input_dim = 5    # number of features
-hidden_dim = 256  # hidden layer dimension
-max_len = 90
-head = 9
-out_dim = 20   # output dimension
-num_layers = 6   # number of hidden layers
-num_epochs = 2000
-learnning_rate = 1e-3
 wandb.init(
-    # set the wandb project where this run will be logged
     project="stock",
-    # track hyperparameters and run metadata
-    config={
-        "input_dim" : 5,   # number of features
-        'hidden_dim' : 256,  # hidden layer dimension
-        'max_len' : 90,
-        'head' : 9,
-        'output_dim' : 20,  # output dimension
-        'num_layers' : 6,   # number of hidden layers
-        'num_epochs' : 100,
-    }
+    config=args
 )
-# Create model
-# model = StockPredictor(input_dim, hidden_dim, num_layers, output_dim)
-model = StockAttention(input_dim, hidden_dim, max_len, head, out_dim, num_layers)
+model = TransformerModel(args)
 model.to(device)
 
-# Loss and optimizer
-# criterion = custom_loss  # 用于回归的你定义的损失函数
 criterion = torch.nn.MSELoss()  # 用于回归的你定义的损失函数
-optimizer = torch.optim.Adam(model.parameters(), lr=learnning_rate)  # Adam 优化器
+optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)  # Adam 优化器
 
-# Load data
 stocks_dataset = StockDataset()
-stocks_loader = DataLoader(stocks_dataset, batch_size=32, shuffle=True)
-
-# Train model
+stocks_loader = DataLoader(stocks_dataset, batch_size=args.bs, shuffle=True)
 
 scheduler = torch.optim.lr_scheduler.OneCycleLR(
                 optimizer,
-                learnning_rate,
-                num_epochs,
+                args.lr,
+                args.epochs,
                 steps_per_epoch=len(stocks_loader)
             )
-for epoch in range(num_epochs):
+
+for epoch in tqdm(range(args.epochs)):
+    train_loss = []
     all_predictions = []
     all_labels = []
-    all_loss = 0
-    for i, (x, y) in enumerate(stocks_loader):
-        inputs = x.to(device).float()
-        labels = y.to(device).float()
-
-        # Forward pass
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
-
-        # Save predictions and labels for each batch
-        all_predictions.extend(outputs.detach().cpu().numpy())
-        all_labels.extend(labels.detach().cpu().numpy())
-
-        # Backward and optimize
+    for batch_idx, (src, tgt) in enumerate(stocks_loader, 0):
+        src, tgt = src.to(device), tgt.to(device)
+        tgt = torch.cat([src[:, -1:, :], tgt], dim=1)
+        tgt_mask = torch.tril(torch.ones(tgt.size(1), tgt.size(1)), diagonal=0) == 0
+        #
+        tgt_mask = tgt_mask.to(device)
         optimizer.zero_grad()
-        loss.backward(retain_graph=True)
+        y_pred = model(src, tgt, tgt_mask)
+        loss = criterion(y_pred[:, :-1, -1], tgt[:, 1:, -1])
+        all_predictions.extend(y_pred[:, :-1, -1].detach().cpu().numpy())
+        all_labels.extend(tgt[:, 1:, -1].detach().cpu().numpy())
+        train_loss.append(loss.item())
+        loss.backward()
         optimizer.step()
-        all_loss += loss.item()
-        if i % 10 == 0:
-            print(f'Epoch {epoch} Batch {i} loss: {all_loss / (i + 1):.2f}')
-            wandb.log({
-                'train loss':all_loss / (i + 1),
-            })
+        if batch_idx % 10 == 0:
+            print(f'Epoch {epoch} Batch {batch_idx} loss: {sum(train_loss) / len(train_loss):.2f}')
 
     scheduler.step()
     lr = optimizer.param_groups[0]['lr']
     wandb.log({
         'lr':lr,
+        'train loss':sum(train_loss) / len(train_loss),
     })
     # Save and plot the predictions after each epoch
     save_and_plot_predictions(all_predictions, all_labels, epoch)

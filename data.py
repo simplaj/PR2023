@@ -55,7 +55,7 @@ class StockDataset(Dataset):
         start = random.randint(0, len_day - self.history_days - self.pre_days)
         
         x = stock_data[self.features].values[start: start + self.history_days]
-        y = stock_data[self.target].\
+        y = stock_data[self.features].\
             values[start + self.history_days: start + self.history_days + self.pre_days:]
         
         return x, y
