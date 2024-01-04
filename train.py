@@ -88,9 +88,8 @@ for epoch in range(num_epochs):
         'lr':lr,
     })
     # Save and plot the predictions after each epoch
+    save_and_plot_predictions(all_predictions, all_labels, epoch)
     if epoch % 50 == 0:
-        save_and_plot_predictions(all_predictions, all_labels, epoch)
-        
         torch.save(model, f'./train_results/model_{epoch}_{loss.item()}.pth')
 
     if (epoch+1) % 1 == 0:
