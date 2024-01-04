@@ -81,17 +81,20 @@ class StockAttention(nn.Module):
             ]
         )
         self.pooling = nn.AdaptiveAvgPool1d(1)
+        self.pooling2 = nn.AdaptiveMaxPool2d(1)
         self.head = nn.Linear(max_len, out_dim)
-        self.act = nn.ReLU()
+        self.act = nn.Sigmoid()
 
     def forward(self, x):
         x = self.stock_emb(x)
         x = x + self.tem_emb
         for layer in self.blocks:
             x = layer(x)
+        max_x = self.pooling2(x)
+        max_x = torch.flatten(max_x, 1)
         x = self.pooling(x)
         x = torch.flatten(x, 1)
-        x = self.act(self.head(x))
+        x = self.act(self.head(x)) * max_x
 
         return x
 
@@ -117,7 +120,7 @@ class StockPredictor(nn.Module):
 
 if __name__ == '__main__':
     # model = StockPredictor(input_dim=5, hidden_dim=64, num_layers=2, output_dim=20)
-    model = StockAttention(5, 32, 90, 9, 20)
+    model = StockAttention(5, 32, 90, 9, 20, 1)
     a = torch.randn(32, 90, 5)
     b = model(a)
     print(b.shape)
