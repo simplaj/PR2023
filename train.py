@@ -76,4 +76,4 @@ for epoch in tqdm(range(args.epochs)):
         torch.save(model, f'./train_results/model_{epoch}_{loss.item()}.pth')
 
     if (epoch+1) % 1 == 0:
-        print('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
+        print('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, args.epochs, loss.item()))
