@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from model import StockPredictor, StockAttention
 from data import StockDataset
 import torch
+import wandb
 from loss import custom_loss      # 导入自定义的损失函数
 from tqdm import tqdm
 
@@ -11,13 +12,29 @@ from utils import save_and_plot_predictions
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # Hyperparameters
 input_dim = 5    # number of features
-hidden_dim = 32  # hidden layer dimension
-num_layers = 2   # number of hidden layers
+hidden_dim = 256  # hidden layer dimension
+max_len = 90
+head = 9
 output_dim = 20   # output dimension
-
+num_layers = 6   # number of hidden layers
+num_epochs = 100
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="stock",
+    # track hyperparameters and run metadata
+    config={
+        "input_dim" : 5,   # number of features
+        'hidden_dim' : 256,  # hidden layer dimension
+        'max_len' : 90,
+        'head' : 9,
+        'output_dim' : 20,  # output dimension
+        'num_layers' : 6,   # number of hidden layers
+        'num_epochs' : 100,
+    }
+)
 # Create model
 # model = StockPredictor(input_dim, hidden_dim, num_layers, output_dim)
-model = StockAttention(5, 256, 90, 9, 20, 6)
+model = StockAttention(input_dim, hidden_dim, max_len, head, out_dim, num_layers)
 model.to(device)
 
 # Loss and optimizer
@@ -30,7 +47,6 @@ stocks_dataset = StockDataset()
 stocks_loader = DataLoader(stocks_dataset, batch_size=32, shuffle=True)
 
 # Train model
-num_epochs = 100
 
 for epoch in range(num_epochs):
     all_predictions = []
@@ -55,6 +71,9 @@ for epoch in range(num_epochs):
         all_loss += loss.item()
         if i % 10 == 0:
             print(f'Epoch {epoch} Batch {i} loss: {all_loss / (i + 1):.2f}')
+            wandb.log({
+                'train loss':all_loss / (i + 1),
+            })
 
     # Save and plot the predictions after each epoch
     save_and_plot_predictions(all_predictions, all_labels, epoch)
