@@ -15,7 +15,7 @@ input_dim = 5    # number of features
 hidden_dim = 256  # hidden layer dimension
 max_len = 90
 head = 9
-output_dim = 20   # output dimension
+out_dim = 20   # output dimension
 num_layers = 6   # number of hidden layers
 num_epochs = 100
 wandb.init(
