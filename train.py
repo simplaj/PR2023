@@ -17,7 +17,7 @@ parser.add_argument('--num_layers', type=int, default=6)
 parser.add_argument('--epochs', type=int, default=2000)
 parser.add_argument('--lr', type=int, default=1e-3)
 parser.add_argument('--seq_len', type=int, default=90)
-parser.add_argument('--bs', type=int, default=256)
+parser.add_argument('--bs', type=int, default=128)
 
 args = parser.parse_args()
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
