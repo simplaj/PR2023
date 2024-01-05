@@ -18,6 +18,7 @@ parser.add_argument('--epochs', type=int, default=2000)
 parser.add_argument('--lr', type=int, default=1e-3)
 parser.add_argument('--seq_len', type=int, default=90)
 parser.add_argument('--bs', type=int, default=128)
+parser.add_argument('--re_path', type=str, default=None)
 
 args = parser.parse_args()
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -27,11 +28,23 @@ wandb.init(
     project="stock",
     config=args
 )
-model = TransformerModel(args)
+
+if not args.re_path:
+    model = TransformerModel(args)
+    re_epoch = -1
+else:
+    model = torch.load(args.re_path)
+    re_epoch = int(args.re_path.split('_')[-2])
+    
 model.to(device)
 
 criterion = torch.nn.MSELoss()  # 用于回归的你定义的损失函数
-optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)  # Adam 优化器
+optimizer = torch.optim.Adam([{'params': model.parameters(), 
+                               'initial_lr': args.lr/25,
+                               'max_lr': args.lr,
+                               'max_momentum': 0.95,
+                               'base_momentum':0.85,
+                               'min_lr':0}], lr=args.lr,)  # Adam 优化器
 
 stocks_dataset = StockDataset()
 stocks_loader = DataLoader(stocks_dataset, batch_size=args.bs, shuffle=True)
@@ -40,10 +53,11 @@ scheduler = torch.optim.lr_scheduler.OneCycleLR(
                 optimizer,
                 args.lr,
                 args.epochs,
-                steps_per_epoch=len(stocks_loader)
+                steps_per_epoch=len(stocks_loader),
+                last_epoch=re_epoch,
             )
 
-for epoch in tqdm(range(args.epochs)):
+for epoch in tqdm(range(re_epoch + 1, args.epochs)):
     train_loss = []
     all_predictions = []
     all_labels = []
