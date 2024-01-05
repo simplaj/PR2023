@@ -86,7 +86,7 @@ for epoch in tqdm(range(re_epoch + 1, args.epochs)):
     })
     # Save and plot the predictions after each epoch
     save_and_plot_predictions(all_predictions, all_labels, epoch)
-    if epoch % 50 == 0:
+    if epoch % 10 == 0:
         torch.save(model, f'./train_results/model_{epoch}_{loss.item()}.pth')
 
     if (epoch+1) % 1 == 0:
